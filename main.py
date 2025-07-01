@@ -1,16 +1,50 @@
 import asyncio
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import CommandStart, Command
-from aiogram.types import Message, FSInputFile
-from config import TOKEN, WEATHER_API_KEY
+from aiogram.types import Message, FSInputFile, CallbackQuery
 import random
 import aiohttp
 from deep_translator import GoogleTranslator
 from gtts import gTTS
 import os
 
+from config import TOKEN, WEATHER_API_KEY
+import keyboards as kb
+
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
+
+@dp.message(Command('links'))
+async def links(message: Message):
+    await message.answer("Выберите ссылку:", reply_markup=kb.inline_keyboard_url)
+
+@dp.message(Command('dynamic'))
+async def dynamic(message: Message):
+    await message.answer("Нажми кнопку ниже:", reply_markup=kb.inline_keyboard_more)
+
+@dp.callback_query(F.data == 'more')
+async def show_options(callback: CallbackQuery):
+    await callback.message.edit_text("Выбери опцию:", reply_markup=kb.inline_keyboard_options)
+    await callback.answer()
+
+
+@dp.callback_query(F.data.in_({'option_1', 'option_2'}))
+async def option_selected(callback: CallbackQuery):
+    if callback.data == "option_1":
+        option = "Опция 1"
+    else:
+        option = "Опция 2"
+    await callback.message.answer(f"Вы выбрали: {option}")
+    await callback.answer()
+
+
+@dp.message(F.text == "Привет")
+async def hello (message: Message):
+    await message.answer(f'Привет, {message.from_user.first_name}!')
+
+@dp.message(F.text == "Пока")
+async def bye(message: Message):
+    await message.answer(f'До свидания, {message.from_user.first_name}!')
 
 
 @dp.message(Command('voice'))
@@ -94,7 +128,7 @@ async def aitext(message: Message):
 
 @dp.message(CommandStart)
 async def start(message: Message):
-    await message.answer(f'Приветики, {message.from_user.first_name}')
+    await message.answer(f'Выберите кнопку', reply_markup= kb.main)
 
 
 async def main():
